@@ -97,3 +97,56 @@ create policy "Users can manage their own inspirations"
   with check (auth.uid() = user_id);
 
 create index if not exists inspirations_user_idx on public.inspirations (user_id, saved_at desc);
+
+-- =====================
+-- filmed_content
+-- =====================
+create table if not exists public.filmed_content (
+  id                   uuid default uuid_generate_v4() primary key,
+  user_id              uuid references auth.users(id) on delete cascade not null,
+  description          text not null,
+  hats                 text[] not null default '{}',
+  location             text not null default 'gallery' check (location in ('gallery','folder','cloud','link')),
+  location_detail      text,
+  missing_for_publish  text[] not null default '{}',
+  urgency              smallint not null default 3 check (urgency between 1 and 5),
+  potential            text not null default 'medium' check (potential in ('high','medium','low')),
+  status               text not null default 'filmed' check (status in ('filmed','needs_edit','in_edit','ready','published')),
+  filmed_at            timestamptz default now() not null,
+  published_at         timestamptz,
+  created_at           timestamptz default now() not null
+);
+
+alter table public.filmed_content enable row level security;
+create policy "Users can manage their filmed content"
+  on public.filmed_content for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create index if not exists filmed_content_user_idx on public.filmed_content (user_id, created_at desc);
+
+-- =====================
+-- content_items
+-- =====================
+create table if not exists public.content_items (
+  id           uuid default uuid_generate_v4() primary key,
+  user_id      uuid references auth.users(id) on delete cascade not null,
+  type         text not null check (type in ('hook','cta','script','reel_idea','story_idea','published','pending')),
+  title        text not null,
+  body         text,
+  hats         text[] not null default '{}',
+  platform     text,
+  status       text not null default 'draft' check (status in ('draft','ready','published','archived')),
+  performance  text check (performance in ('high','medium','low')),
+  notes        text,
+  created_at   timestamptz default now() not null,
+  published_at timestamptz
+);
+
+alter table public.content_items enable row level security;
+create policy "Users can manage their content items"
+  on public.content_items for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create index if not exists content_items_user_idx on public.content_items (user_id, created_at desc);

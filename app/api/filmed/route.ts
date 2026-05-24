@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function GET() {
   const supabase = await createClient();
@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { data, error } = await supabase
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("filmed_content")
     .insert({ ...body, user_id: user.id })
     .select()
@@ -39,7 +40,8 @@ export async function PATCH(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id, ...updates } = await request.json();
-  const { error } = await supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("filmed_content")
     .update(updates)
     .eq("id", id)
