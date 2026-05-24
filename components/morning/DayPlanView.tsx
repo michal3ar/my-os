@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { DailyCheckin, Task } from "@/types";
 import { HAT_MAP } from "@/lib/constants";
 import { updateTask as apiUpdateTask } from "@/lib/tasks";
@@ -71,6 +72,7 @@ export function DayPlanView({ checkin, onRedo, openTasks, hiddenTitles, filmedCo
   const energyInfo = ENERGY_LEVEL_LABELS[checkin.energy];
   const moodInfo = MOOD_LABELS[checkin.mood];
 
+  const router = useRouter();
   const [checkedMain, setCheckedMain] = useState<Set<string>>(new Set());
   const [strategicDone, setStrategicDone] = useState(false);
   const [localTasks, setLocalTasks] = useState(openTasks);
@@ -93,7 +95,8 @@ export function DayPlanView({ checkin, onRedo, openTasks, hiddenTitles, filmedCo
         setTimeout(() => {
           setLocalTasks(prev => prev.filter(t => t.id !== taskId));
           setCheckedMain(prev => { const s = new Set(prev); s.delete(taskId); return s; });
-        }, 600); // short delay so the checkmark animation is visible
+          router.refresh();
+        }, 600);
       }
     }
   }

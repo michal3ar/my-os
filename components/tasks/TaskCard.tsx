@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Task } from "@/types";
 import { HAT_MAP, ENERGY_TYPE_LABELS } from "@/lib/constants";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +29,7 @@ const URGENCY_COLORS = [
 
 export function TaskCard({ task, onDone, onUpdate }: Props) {
   const storeUpdate = useAppStore((s) => s.updateTask);
+  const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
 
   async function markDone() {
@@ -36,6 +38,7 @@ export function TaskCard({ task, onDone, onUpdate }: Props) {
     if (ok) {
       storeUpdate(task.id, updates);
       onDone?.(task.id);
+      router.refresh(); // sync server state across pages
     }
   }
 
@@ -45,6 +48,7 @@ export function TaskCard({ task, onDone, onUpdate }: Props) {
     if (ok) {
       storeUpdate(task.id, { status: newStatus });
       onUpdate?.(task.id, { status: newStatus });
+      router.refresh();
     }
   }
 

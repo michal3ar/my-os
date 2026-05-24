@@ -4,9 +4,9 @@ export async function updateTask(id: string, updates: Record<string, unknown>): 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id, ...updates }),
   });
+  const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const { error } = await res.json();
-    console.error("updateTask failed:", error);
+    console.error("updateTask failed:", body.error ?? res.status);
     return false;
   }
   return true;
