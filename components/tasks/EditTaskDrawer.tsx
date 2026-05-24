@@ -46,10 +46,10 @@ export function EditTaskDrawer({ task, onClose }: Props) {
   async function save() {
     if (!title.trim()) return;
     setSaving(true);
-    const updates = {
+    const updates: Partial<Task> = {
       title: title.trim(),
-      description: description.trim() || null,
-      snoozed_until: snoozeDate || null,
+      description: description.trim() || undefined,
+      snoozed_until: snoozeDate || undefined,
     };
     const ok = await apiUpdateTask(task.id, updates);
     if (ok) updateTask(task.id, updates);

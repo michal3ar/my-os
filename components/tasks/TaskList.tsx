@@ -14,20 +14,28 @@ interface Props {
 
 export function TaskList({ tasks }: Props) {
   const today = new Date().toISOString().split("T")[0];
-  const activeTasks = tasks.filter(
-    (t) => t.status !== "done" && (!t.snoozed_until || t.snoozed_until <= today)
+  const [localTasks, setLocalTasks] = useState(
+    tasks.filter((t) => t.status !== "done" && (!t.snoozed_until || t.snoozed_until <= today))
   );
   const [filter, setFilter] = useState<FilterView>("all");
   const [selectedHat, setSelectedHat] = useState<HatId | null>(null);
 
+  function handleDone(id: string) {
+    setLocalTasks((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  function handleUpdate(id: string, updates: Partial<Task>) {
+    setLocalTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+  }
+
   const displayTasks = (() => {
-    if (filter === "stuck") return activeTasks.filter((t) => t.status === "stuck");
-    if (filter === "urgency") return [...activeTasks].sort((a, b) => b.urgency - a.urgency);
-    if (filter === "hat" && selectedHat) return activeTasks.filter((t) => t.hats.includes(selectedHat));
-    return activeTasks;
+    if (filter === "stuck") return localTasks.filter((t) => t.status === "stuck");
+    if (filter === "urgency") return [...localTasks].sort((a, b) => b.urgency - a.urgency);
+    if (filter === "hat" && selectedHat) return localTasks.filter((t) => t.hats.includes(selectedHat));
+    return localTasks;
   })();
 
-  const stuckCount = activeTasks.filter((t) => t.status === "stuck").length;
+  const stuckCount = localTasks.filter((t) => t.status === "stuck").length;
 
   return (
     <div className="space-y-4">
@@ -78,7 +86,7 @@ export function TaskList({ tasks }: Props) {
 
       <div className="space-y-3">
         {displayTasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard key={task.id} task={task} onDone={handleDone} onUpdate={handleUpdate} />
         ))}
       </div>
     </div>

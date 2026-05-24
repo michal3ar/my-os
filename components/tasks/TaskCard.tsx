@@ -13,6 +13,8 @@ import { EditTaskDrawer } from "./EditTaskDrawer";
 
 interface Props {
   task: Task;
+  onDone?: (id: string) => void;
+  onUpdate?: (id: string, updates: Partial<Task>) => void;
 }
 
 const URGENCY_COLORS = [
@@ -24,20 +26,26 @@ const URGENCY_COLORS = [
   "bg-red-100 text-red-700",
 ];
 
-export function TaskCard({ task }: Props) {
+export function TaskCard({ task, onDone, onUpdate }: Props) {
   const storeUpdate = useAppStore((s) => s.updateTask);
   const [editOpen, setEditOpen] = useState(false);
 
   async function markDone() {
-    const updates = { status: "done", completed_at: new Date().toISOString() };
+    const updates: Partial<Task> = { status: "done", completed_at: new Date().toISOString() };
     const ok = await apiUpdateTask(task.id, updates);
-    if (ok) storeUpdate(task.id, updates);
+    if (ok) {
+      storeUpdate(task.id, updates);
+      onDone?.(task.id);
+    }
   }
 
   async function toggleStuck() {
-    const newStatus = task.status === "stuck" ? "todo" : "stuck";
+    const newStatus: Task["status"] = task.status === "stuck" ? "todo" : "stuck";
     const ok = await apiUpdateTask(task.id, { status: newStatus });
-    if (ok) storeUpdate(task.id, { status: newStatus });
+    if (ok) {
+      storeUpdate(task.id, { status: newStatus });
+      onUpdate?.(task.id, { status: newStatus });
+    }
   }
 
   return (

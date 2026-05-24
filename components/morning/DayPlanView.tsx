@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { DailyCheckin, Task } from "@/types";
 import { HAT_MAP } from "@/lib/constants";
+import { updateTask as apiUpdateTask } from "@/lib/tasks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ENERGY_LEVEL_LABELS, MOOD_LABELS } from "@/lib/constants";
@@ -72,9 +73,30 @@ export function DayPlanView({ checkin, onRedo, openTasks, hiddenTitles, filmedCo
 
   const [checkedMain, setCheckedMain] = useState<Set<string>>(new Set());
   const [strategicDone, setStrategicDone] = useState(false);
+  const [localTasks, setLocalTasks] = useState(openTasks);
 
   const mainDone = checkedMain.size;
-  const mainTotal = openTasks.length || plan.main_tasks.length;
+  const mainTotal = localTasks.length || plan.main_tasks.length;
+
+  async function handleTaskCheck(taskId: string) {
+    const isChecked = checkedMain.has(taskId);
+    const next = new Set(checkedMain);
+    if (isChecked) {
+      next.delete(taskId);
+      setCheckedMain(next);
+    } else {
+      next.add(taskId);
+      setCheckedMain(next);
+      // Mark as done in DB and remove from list
+      const ok = await apiUpdateTask(taskId, { status: "done", completed_at: new Date().toISOString() });
+      if (ok) {
+        setTimeout(() => {
+          setLocalTasks(prev => prev.filter(t => t.id !== taskId));
+          setCheckedMain(prev => { const s = new Set(prev); s.delete(taskId); return s; });
+        }, 600); // short delay so the checkmark animation is visible
+      }
+    }
+  }
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -106,17 +128,13 @@ export function DayPlanView({ checkin, onRedo, openTasks, hiddenTitles, filmedCo
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {openTasks.length === 0 && (
+          {localTasks.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-2">✨ כל המשימות הושלמו!</p>
           )}
-          {openTasks.map((task, i) => (
+          {localTasks.map((task, i) => (
             <button
               key={task.id}
-              onClick={() => {
-                const next = new Set(checkedMain);
-                next.has(task.id) ? next.delete(task.id) : next.add(task.id);
-                setCheckedMain(next);
-              }}
+              onClick={() => handleTaskCheck(task.id)}
               className={cn(
                 "w-full flex items-start gap-3 p-3 rounded-lg text-right transition-all",
                 checkedMain.has(task.id) ? "bg-muted/40 opacity-50" : "bg-secondary/50 hover:bg-secondary"

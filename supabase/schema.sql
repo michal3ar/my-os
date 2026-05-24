@@ -69,3 +69,31 @@ create policy "Users can manage their own tasks"
 -- Index for common queries
 create index if not exists tasks_user_status_idx on public.tasks (user_id, status);
 create index if not exists tasks_user_urgency_idx on public.tasks (user_id, urgency desc);
+
+-- =====================
+-- inspirations
+-- =====================
+create table if not exists public.inspirations (
+  id               uuid default uuid_generate_v4() primary key,
+  user_id          uuid references auth.users(id) on delete cascade not null,
+  url              text,
+  platform         text not null default 'other' check (platform in ('tiktok','instagram','other')),
+  title            text,
+  why_saved        text not null,
+  categories       text[] not null default '{}',
+  relevant_hats    text[] not null default '{}',
+  relevant_products text[] not null default '{}',
+  status           text not null default 'saved' check (status in ('saved','analyzed','ready_to_use','used')),
+  notes            text,
+  saved_at         timestamptz default now() not null
+);
+
+alter table public.inspirations enable row level security;
+
+create policy "Users can manage their own inspirations"
+  on public.inspirations
+  for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create index if not exists inspirations_user_idx on public.inspirations (user_id, saved_at desc);
